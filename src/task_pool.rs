@@ -51,6 +51,18 @@ impl<'s, T> AsyncTaskPool<'s, T> {
         });
         statuses.into_iter()
     }
+
+    /// Returns a task that has finished from the task pool
+    pub fn poll_finished(&mut self) -> Option<T> {
+        for (idx, task) in self.0.into_iter().enumerate() {
+            let Some(rx) = task else { continue };
+            let Some(v) = rx.try_recv() else { continue };
+
+            self.0.remove(idx);
+            return Some(v)
+        }
+        None
+    }
 }
 
 impl<'_s, T: Send + 'static> ExclusiveSystemParam for AsyncTaskPool<'_s, T> {
